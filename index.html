@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TalentAI — AI Resume Screening Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #09090f;
+  --surface: #111118;
+  --surface2: #18181f;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #f0eeff;
+  --muted: rgba(240,238,255,0.45);
+  --faint: rgba(240,238,255,0.15);
+  --purple: #8b5cf6;
+  --purple-light: rgba(139,92,246,0.15);
+  --purple-border: rgba(139,92,246,0.35);
+  --teal: #14b8a6;
+  --teal-light: rgba(20,184,166,0.12);
+  --amber: #f59e0b;
+  --amber-light: rgba(245,158,11,0.12);
+  --green: #22c55e;
+  --green-light: rgba(34,197,94,0.12);
+  --red: #ef4444;
+  --red-light: rgba(239,68,68,0.12);
+  --font: 'Outfit', sans-serif;
+  --mono: 'Space Mono', monospace;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size:14px; line-height:1.5; overflow-x:hidden; }
+::selection { background: var(--purple); color: white; }
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(9,9,15,0.85); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 0; padding: 0 24px;
+  height: 52px;
+}
+.tb-logo { font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px; margin-right: 32px; }
+.tb-logo-icon { width: 26px; height: 26px; border-radius: 8px; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.tb-nav { display: flex; flex: 1; }
+.tb-item {
+  padding: 0 16px; height: 52px; display: flex; align-items: center;
+  font-size: 13px; color: var(--muted); cursor: pointer; gap: 7px;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+  user-select: none; border-top: 2px solid transparent; /* balance */
+}
+.tb-item:hover { color: var(--text); }
+.tb-item.active { color: var(--text); border-bottom-color: var(--purple); }
+.tb-badge { font-size: 10px; background: var(--purple); color: white; padding: 1px 6px; border-radius: 99px; }
+.tb-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.tb-btn {
+  font-size: 12px; font-family: var(--font); padding: 6px 16px;
+  border-radius: 8px; cursor: pointer; border: none; transition: all 0.15s;
+}
+.tb-btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border2); }
+.tb-btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+.tb-btn-primary { background: var(--purple); color: white; font-weight: 600; }
+.tb-btn-primary:hover { background: #7c3aed; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+
+/* ── APP LAYOUT ── */
+.app-layout { display: flex; height: calc(100vh - 52px); }
+
+/* Sidebar */
+.sidebar {
+  width: 220px; flex-shrink: 0; background: var(--surface);
+  border-right: 1px solid var(--border); overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.sidebar-section { padding: 16px 12px 8px; }
+.sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 0 8px; margin-bottom: 4px; }
+.sidebar-item {
+  display: flex; align-items: center; gap: 9px; padding: 7px 10px;
+  border-radius: 8px; font-size: 13px; color: var(--muted); cursor: pointer;
+  transition: all 0.15s; user-select: none;
+}
+.sidebar-item:hover { background: var(--surface2); color: var(--text); }
+.sidebar-item.active { background: var(--purple-light); color: var(--text); border: 1px solid var(--purple-border); }
+.sidebar-item .si-icon { width: 16px; text-align: center; }
+.sidebar-count { margin-left: auto; font-size: 10px; font-family: var(--mono); color: var(--faint); }
+
+.job-list { display: flex; flex-direction: column; gap: 2px; }
+.job-item {
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  transition: all 0.15s; border: 1px solid transparent;
+}
+.job-item:hover { background: var(--surface2); }
+.job-item.active { background: var(--purple-light); border-color: var(--purple-border); }
+.job-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.job-meta { font-size: 10px; color: var(--muted); display: flex; gap: 8px; }
+.job-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 4px; }
+
+/* Main area */
+.main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Views */
+.view { display: none; flex: 1; overflow: hidden; }
+.view.active { display: flex; }
+
+/* ── DASHBOARD VIEW ── */
+#view-dashboard { flex-direction: column; overflow-y: auto; padding: 28px; gap: 24px; }
+.dash-header { display: flex; align-items: flex-start; justify-content: space-between; }
+.dash-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.dash-sub { font-size: 13px; color: var(--muted); }
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+.sc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sc-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.sc-delta { font-size: 11px; font-family: var(--mono); }
+.sc-val { font-size: 28px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.sc-label { font-size: 12px; color: var(--muted); }
+
+/* Pipeline */
+.pipeline-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.pipe-stage { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.pipe-stage-name { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.pipe-count { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+.pipe-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
+.pipe-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+/* Recent applicants mini */
+.mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.mini-card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.mini-card-title { font-size: 14px; font-weight: 600; }
+.mini-link { font-size: 12px; color: var(--purple); cursor: pointer; }
+.candidate-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+.candidate-row:last-child { border-bottom: none; }
+.candidate-row:hover { background: var(--surface2); }
+.cand-av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; color: white; }
+.cand-name { font-size: 13px; font-weight: 600; }
+.cand-role { font-size: 11px; color: var(--muted); }
+.cand-score { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.score-bar-outer { width: 64px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.score-bar-fill { height: 100%; border-radius: 3px; }
+.score-num { font-family: var(--mono); font-size: 11px; font-weight: 700; }
+
+/* ── CANDIDATES VIEW ── */
+#view-candidates { overflow: hidden; }
+.candidates-layout { display: flex; flex: 1; overflow: hidden; }
+.candidates-list { width: 320px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; }
+.list-toolbar { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+.search-input {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 6px 10px; color: var(--text);
+  font-family: var(--font); font-size: 12px; outline: none;
+}
+.search-input::placeholder { color: var(--faint); }
+.filter-btn {
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px;
+  padding: 6px 10px; color: var(--muted); font-size: 12px; cursor: pointer;
+  font-family: var(--font);
+}
+.filter-btn:hover { color: var(--text); }
+.cand-card {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.15s; position: relative;
+}
+.cand-card:hover { background: var(--surface2); }
+.cand-card.selected { background: var(--purple-light); border-left: 2px solid var(--purple); }
+.cc-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.cc-av { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; }
+.cc-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.cc-title { font-size: 11px; color: var(--muted); }
+.cc-score-badge { margin-left: auto; font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
+.cc-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.cc-tag { font-size: 10px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--border2); color: var(--muted); }
+.cc-meta { display: flex; gap: 12px; font-size: 11px; color: var(--faint); }
+
+/* Detail panel */
+.detail-panel { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.detail-header { padding: 24px 28px; border-bottom: 1px solid var(--border); display: flex; gap: 18px; align-items: flex-start; }
+.dh-av { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: white; flex-shrink: 0; }
+.dh-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.dh-title { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+.dh-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.dh-tag { font-size: 11px; padding: 3px 10px; border-radius: 99px; font-weight: 500; }
+.dh-actions { margin-left: auto; display: flex; gap: 8px; flex-direction: column; align-items: flex-end; }
+
+/* AI match section */
+.ai-match-card {
+  margin: 20px 28px; background: var(--surface); border: 1px solid var(--purple-border);
+  border-radius: 14px; overflow: hidden;
+}
+.ai-header { background: var(--purple-light); padding: 14px 18px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--purple-border); }
+.ai-label { font-size: 13px; font-weight: 600; }
+.ai-score-big { margin-left: auto; font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--purple); }
+.ai-breakdown { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.ab-row { display: flex; align-items: center; gap: 12px; }
+.ab-label { font-size: 12px; color: var(--muted); width: 120px; flex-shrink: 0; }
+.ab-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.ab-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+.ab-val { font-family: var(--mono); font-size: 11px; color: var(--text); width: 32px; text-align: right; }
+
+/* Workflow status */
+.workflow-section { padding: 20px 28px; border-top: 1px solid var(--border); }
+.ws-title { font-size: 13px; font-weight: 600; margin-bottom: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+.status-flow { display: flex; align-items: center; gap: 0; }
+.sf-step { flex: 1; position: relative; }
+.sf-step:not(:last-child)::after { content: ''; position: absolute; top: 16px; left: calc(50% + 20px); right: calc(-50% + 20px); height: 2px; background: var(--border); z-index: 0; }
+.sf-step.done::after { background: var(--purple); }
+.sf-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; margin: 0 auto 6px; position: relative; z-index: 1; border: 2px solid var(--border); background: var(--surface); }
+.sf-step.done .sf-circle { background: var(--purple); border-color: var(--purple); }
+.sf-step.current .sf-circle { border-color: var(--purple); background: var(--purple-light); color: var(--purple); }
+.sf-name { font-size: 10px; text-align: center; color: var(--muted); }
+.sf-step.done .sf-name, .sf-step.current .sf-name { color: var(--text); }
+
+/* Buttons */
+.action-btn {
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  padding: 8px 16px; border-radius: 8px; cursor: pointer; border: none;
+  transition: all 0.15s;
+}
+.btn-purple { background: var(--purple); color: white; }
+.btn-purple:hover { background: #7c3aed; }
+.btn-ghost-sm { background: transparent; border: 1px solid var(--border2); color: var(--muted); }
+.btn-ghost-sm:hover { color: var(--text); border-color: var(--border2); }
+.btn-danger { background: var(--red-light); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+.btn-danger:hover { background: rgba(239,68,68,.25); }
+
+/* Tag colors */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 99px; }
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-amber { background: var(--amber-light); color: var(--amber); }
+.badge-red { background: var(--red-light); color: var(--red); }
+.badge-purple { background: var(--purple-light); color: var(--purple); }
+.badge-teal { background: var(--teal-light); color: var(--teal); }
+
+/* ── CASE STUDY SECTION ── */
+#view-case { flex-direction: column; overflow-y: auto; padding: 48px; gap: 48px; max-width: 900px; margin: 0 auto; }
+.cs-eyebrow { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--purple); margin-bottom: 12px; font-family: var(--mono); }
+.cs-title { font-size: clamp(32px,4vw,52px); font-weight: 800; line-height: 1.1; margin-bottom: 16px; }
+.cs-subtitle { font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 580px; }
+.cs-divider { border: none; border-top: 1px solid var(--border); }
+.cs-h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+.cs-p { font-size: 14px; color: var(--muted); line-height: 1.75; margin-bottom: 16px; }
+.cs-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.cs-grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.cs-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+.cs-card-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.cs-card-text { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.cs-card-num { font-size: 36px; font-weight: 800; margin-bottom: 6px; }
+.chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 12px; padding: 4px 13px; border-radius: 99px; border: 1px solid var(--border2); color: var(--muted); }
+.chip.hi { background: var(--purple-light); border-color: var(--purple-border); color: var(--purple); }
+
+/* ── SCROLL HELPERS ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-logo">
+    <div class="tb-logo-icon">⚡</div>
+    TalentAI
+  </div>
+  <div class="tb-nav">
+    <div class="tb-item" onclick="switchView('dashboard', this)">Dashboard</div>
+    <div class="tb-item active" onclick="switchView('candidates', this)">Candidates <span class="tb-badge">248</span></div>
+    <div class="tb-item" onclick="switchView('case', this)">Case Study</div>
+  </div>
+  <div class="tb-right">
+    <button class="tb-btn tb-btn-ghost">Export</button>
+    <button class="tb-btn tb-btn-primary">+ Post job</button>
+    <div class="avatar">KL</div>
+  </div>
+</div>
+
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <div class="sidebar-item active"><span class="si-icon">👥</span> All candidates <span class="sidebar-count">248</span></div>
+      <div class="sidebar-item"><span class="si-icon">⭐</span> Shortlisted <span class="sidebar-count">31</span></div>
+      <div class="sidebar-item"><span class="si-icon">📅</span> Interviews <span class="sidebar-count">12</span></div>
+      <div class="sidebar-item"><span class="si-icon">✓</span> Offers sent <span class="sidebar-count">4</span></div>
+      <div class="sidebar-item"><span class="si-icon">🗄️</span> Archived <span class="sidebar-count">87</span></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Active Jobs</div>
+      <div class="job-list">
+        <div class="job-item active">
+          <div class="job-title">Senior UX Designer</div>
+          <div class="job-meta"><span><span class="job-dot"></span>Active</span><span>142 apps</span></div>
+        </div>
+        <div class="job-item">
+          <div class="job-title">Frontend Engineer</div>
+          <div class="job-meta"><span><span class="job-dot"></span>Active</span><span>89 apps</span></div>
+        </div>
+        <div class="job-item">
+          <div class="job-title">Product Manager</div>
+          <div class="job-meta"><span><span class="job-dot" style="background:var(--amber)"></span>Paused</span><span>17 apps</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-area">
+
+    <!-- DASHBOARD -->
+    <div id="view-dashboard" class="view" style="overflow-y:auto; padding:28px; flex-direction:column; gap:20px;">
+      <div class="dash-header">
+        <div>
+          <div class="dash-title">Recruiting Overview</div>
+          <div class="dash-sub">Senior UX Designer — Spring 2024 cohort</div>
+        </div>
+        <button class="tb-btn tb-btn-primary" style="margin-top:4px">Generate report ↗</button>
+      </div>
+      <div class="stat-row">
+        <div class="stat-card"><div class="sc-top"><div class="sc-icon" style="background:var(--purple-light);">📥</div><span class="sc-delta" style="color:var(--green)">+18% ↑</span></div><div class="sc-val">248</div><div class="sc-label">Total applicants</div></div>
+        <div class="stat-card"><div class="sc-top"><div class="sc-icon" style="background:var(--teal-light);">⚡</div><span class="sc-delta" style="color:var(--green)">94% match</span></div><div class="sc-val">142</div><div class="sc-label">AI-screened today</div></div>
+        <div class="stat-card"><div class="sc-top"><div class="sc-icon" style="background:var(--green-light);">⭐</div><span class="sc-delta" style="color:var(--muted)">top 13%</span></div><div class="sc-val">31</div><div class="sc-label">Shortlisted</div></div>
+        <div class="stat-card"><div class="sc-top"><div class="sc-icon" style="background:var(--amber-light);">📅</div><span class="sc-delta" style="color:var(--amber)">3 today</span></div><div class="sc-val">12</div><div class="sc-label">Interviews scheduled</div></div>
+      </div>
+      <div>
+        <div style="font-size:13px; font-weight:600; margin-bottom:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-size:11px;">Hiring pipeline</div>
+        <div class="pipeline-row">
+          <div class="pipe-stage"><div class="pipe-stage-name">Applied</div><div class="pipe-count" style="color:var(--purple)">248</div><div class="pipe-bar"><div class="pipe-fill" style="width:100%;background:var(--purple)"></div></div></div>
+          <div class="pipe-stage"><div class="pipe-stage-name">AI Screened</div><div class="pipe-count" style="color:var(--teal)">142</div><div class="pipe-bar"><div class="pipe-fill" style="width:57%;background:var(--teal)"></div></div></div>
+          <div class="pipe-stage"><div class="pipe-stage-name">Shortlisted</div><div class="pipe-count" style="color:var(--green)">31</div><div class="pipe-bar"><div class="pipe-fill" style="width:12%;background:var(--green)"></div></div></div>
+          <div class="pipe-stage"><div class="pipe-stage-name">Interviewed</div><div class="pipe-count" style="color:var(--amber)">12</div><div class="pipe-bar"><div class="pipe-fill" style="width:5%;background:var(--amber)"></div></div></div>
+          <div class="pipe-stage"><div class="pipe-stage-name">Offered</div><div class="pipe-count" style="color:#ff7b7b">4</div><div class="pipe-bar"><div class="pipe-fill" style="width:2%;background:#ff7b7b"></div></div></div>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-header"><span class="mini-card-title">Top ranked candidates</span><span class="mini-link" onclick="switchTabDirect('candidates')">View all →</span></div>
+        <div class="candidate-row"><div class="cand-av" style="background:#8b5cf6">PL</div><div><div class="cand-name">Priya Lakshmanan</div><div class="cand-role">Sr. UX Designer · 6 yrs exp</div></div><div class="cand-score"><div class="score-bar-outer"><div class="score-bar-fill" style="width:94%;background:var(--green)"></div></div><span class="score-num" style="color:var(--green)">94</span></div></div>
+        <div class="candidate-row"><div class="cand-av" style="background:#14b8a6">DK</div><div><div class="cand-name">David Kowalski</div><div class="cand-role">Product Designer · 4 yrs exp</div></div><div class="cand-score"><div class="score-bar-outer"><div class="score-bar-fill" style="width:88%;background:var(--teal)"></div></div><span class="score-num" style="color:var(--teal)">88</span></div></div>
+        <div class="candidate-row"><div class="cand-av" style="background:#f59e0b">MA</div><div><div class="cand-name">Maya Adeyemi</div><div class="cand-role">UX/UI Designer · 5 yrs exp</div></div><div class="cand-score"><div class="score-bar-outer"><div class="score-bar-fill" style="width:85%;background:var(--amber)"></div></div><span class="score-num" style="color:var(--amber)">85</span></div></div>
+      </div>
+    </div>
+
+    <!-- CANDIDATES -->
+    <div id="view-candidates" class="view active">
+      <div class="candidates-layout">
+        <div class="candidates-list">
+          <div class="list-toolbar">
+            <input class="search-input" placeholder="Search candidates..." value="">
+            <button class="filter-btn">Filters ▾</button>
+          </div>
+          <div id="cand-list">
+            <!-- populated by JS -->
+          </div>
+        </div>
+        <div class="detail-panel" id="detail-panel">
+          <div class="detail-header">
+            <div class="dh-av" id="dh-av" style="background:#8b5cf6">PL</div>
+            <div>
+              <div class="dh-name" id="dh-name">Priya Lakshmanan</div>
+              <div class="dh-title" id="dh-title">Senior UX Designer · San Francisco, CA</div>
+              <div class="dh-tags" id="dh-tags"></div>
+            </div>
+            <div class="dh-actions">
+              <button class="action-btn btn-purple">Move to interview ↗</button>
+              <div style="display:flex;gap:6px">
+                <button class="action-btn btn-ghost-sm">⭐ Shortlist</button>
+                <button class="action-btn btn-danger">Archive</button>
+              </div>
+            </div>
+          </div>
+          <div class="ai-match-card">
+            <div class="ai-header">
+              <span style="font-size:16px">⚡</span>
+              <span class="ai-label">AI Match Score — Senior UX Designer</span>
+              <span class="ai-score-big" id="ai-score">94</span>
+            </div>
+            <div class="ai-breakdown" id="ai-breakdown"></div>
+          </div>
+          <div class="workflow-section">
+            <div class="ws-title">Hiring workflow status</div>
+            <div class="status-flow" id="status-flow"></div>
+          </div>
+          <div style="padding:0 28px 28px; flex:1;">
+            <div style="font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:14px;">Experience highlights</div>
+            <div id="exp-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASE STUDY -->
+    <div id="view-case" class="view" style="display:none; flex-direction:column; overflow-y:auto; padding:48px; gap:40px; max-width:860px; margin:0 auto; width:100%;">
+      <div>
+        <div class="cs-eyebrow">Project 03 — AI-Powered Platform</div>
+        <h1 class="cs-title">Designing an AI resume<br>screening platform</h1>
+        <p class="cs-subtitle">End-to-end UX and interface design for a machine learning platform that helps recruiters screen candidates 10× faster without sacrificing quality.</p>
+        <div class="chip-list" style="margin-top:20px">
+          <span class="chip hi">Figma</span><span class="chip hi">Framer</span><span class="chip">FastAPI</span><span class="chip">Accessibility Audit</span><span class="chip">User Personas</span><span class="chip">Task Flows</span>
+        </div>
+      </div>
+      <hr class="cs-divider">
+      <div>
+        <h3 class="cs-h3">The problem</h3>
+        <p class="cs-p">Recruiters at mid-to-large companies screen 200+ resumes per open role. The process is manual, inconsistent, and biased by recency (whoever they review last tends to score highest). The client needed an AI-powered dashboard that surfaces the best candidates without creating a black box experience.</p>
+        <div class="cs-grid3">
+          <div class="cs-card"><div class="cs-card-num" style="color:var(--red)">6.2h</div><div class="cs-card-title">Average screening time</div><div class="cs-card-text">Per role, before AI assistance. Recruiters reported severe decision fatigue.</div></div>
+          <div class="cs-card"><div class="cs-card-num" style="color:var(--amber)">61%</div><div class="cs-card-title">Inconsistent scoring</div><div class="cs-card-text">Same recruiter scored identical resumes differently on different days.</div></div>
+          <div class="cs-card"><div class="cs-card-num" style="color:var(--purple)">3</div><div class="cs-card-title">Rounds of usability testing</div><div class="cs-card-text">12 participants per round. Iterated from wireframes to production prototype.</div></div>
+        </div>
+      </div>
+      <hr class="cs-divider">
+      <div>
+        <h3 class="cs-h3">Key design decisions</h3>
+        <p class="cs-p">The core challenge was making the AI score feel trustworthy, not arbitrary. Recruiters needed to understand why a candidate scored 94 — not just that they did.</p>
+        <div class="cs-grid2">
+          <div class="cs-card">
+            <div class="cs-card-title">⚡ Explainable AI scores</div>
+            <div class="cs-card-text">Instead of a single opaque match score, we designed a 5-dimension breakdown: Skills match, Experience level, Culture fit signals, Education relevance, and Communication quality. Each dimension shows a bar and a 1-line explanation in plain language.</div>
+          </div>
+          <div class="cs-card">
+            <div class="cs-card-title">🔄 Status workflow UI</div>
+            <div class="cs-card-text">A visual pipeline from Applied → Screened → Shortlisted → Interview → Offer keeps the recruiter oriented at every stage. Single-click stage transitions with undo support. Bulk actions for screening 10+ at once.</div>
+          </div>
+          <div class="cs-card">
+            <div class="cs-card-title">♿ Accessibility-first</div>
+            <div class="cs-card-text">Full keyboard navigation, ARIA live regions for dynamic score updates, 4.5:1+ contrast on all text. Tested with NVDA and macOS VoiceOver. WCAG 2.1 AA certified.</div>
+          </div>
+          <div class="cs-card">
+            <div class="cs-card-title">⚡ Real-time candidate ranking</div>
+            <div class="cs-card-text">Scores update live as the job description changes. Framer prototype used real dummy data and animated transitions to simulate the live-ranking experience in usability tests.</div>
+          </div>
+        </div>
+      </div>
+      <hr class="cs-divider">
+      <div>
+        <h3 class="cs-h3">Outcomes</h3>
+        <div class="cs-grid3">
+          <div class="cs-card"><div class="cs-card-num" style="color:var(--green)">10×</div><div class="cs-card-title">Faster initial screening</div><div class="cs-card-text">Time to first shortlist cut from 6.2 hours to 38 minutes.</div></div>
+          <div class="cs-card"><div class="cs-card-num" style="color:var(--teal)">89%</div><div class="cs-card-title">Recruiter trust score</div><div class="cs-card-text">Post-testing: "I understand why the AI ranked them this way" — 89% agreement.</div></div>
+          <div class="cs-card"><div class="cs-card-num" style="color:var(--purple)">100%</div><div class="cs-card-title">WCAG AA compliance</div><div class="cs-card-text">All interactive elements pass keyboard nav, contrast, and ARIA audit.</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const candidates = [
+  { id:1, initials:'PL', color:'#8b5cf6', name:'Priya Lakshmanan', title:'Sr. UX Designer', exp:'6 yrs', loc:'San Francisco, CA', score:94, scoreColor:'var(--green)', status:3, tags:['Figma','Design Systems','User Research','WCAG'], ai:[{label:'Skills match',val:97},{label:'Experience',val:95},{label:'Portfolio quality',val:92},{label:'Culture signals',val:90},{label:'Education',val:88}] },
+  { id:2, initials:'DK', color:'#14b8a6', name:'David Kowalski', title:'Product Designer', exp:'4 yrs', loc:'New York, NY', score:88, scoreColor:'var(--teal)', status:2, tags:['Figma','Framer','Prototyping','A/B Testing'], ai:[{label:'Skills match',val:90},{label:'Experience',val:85},{label:'Portfolio quality',val:88},{label:'Culture signals',val:82},{label:'Education',val:94}] },
+  { id:3, initials:'MA', color:'#f59e0b', name:'Maya Adeyemi', title:'UX/UI Designer', exp:'5 yrs', loc:'Austin, TX', score:85, scoreColor:'var(--amber)', status:2, tags:['Mobile UX','Figma','iOS/Android','Usability Testing'], ai:[{label:'Skills match',val:88},{label:'Experience',val:82},{label:'Portfolio quality',val:86},{label:'Culture signals',val:78},{label:'Education',val:90}] },
+  { id:4, initials:'RS', color:'#ec4899', name:'Ravi Sharma', title:'Interaction Designer', exp:'3 yrs', loc:'Remote', score:72, scoreColor:'var(--muted)', status:1, tags:['Figma','Motion','Lottie','Accessibility'], ai:[{label:'Skills match',val:75},{label:'Experience',val:68},{label:'Portfolio quality',val:78},{label:'Culture signals',val:72},{label:'Education',val:70}] },
+  { id:5, initials:'TC', color:'#22c55e', name:'Tara Chen', title:'UX Researcher', exp:'7 yrs', loc:'Chicago, IL', score:91, scoreColor:'var(--green)', status:3, tags:['User Research','Miro','Affinity Mapping','Personas'], ai:[{label:'Skills match',val:94},{label:'Experience',val:96},{label:'Portfolio quality',val:85},{label:'Culture signals',val:88},{label:'Education',val:92}] },
+];
+const stages = ['Applied','AI Screened','Shortlisted','Interview','Offered'];
+let selected = 0;
+
+function renderList() {
+  const list = document.getElementById('cand-list');
+  list.innerHTML = candidates.map((c,i) => `
+    <div class="cand-card ${i===selected?'selected':''}" onclick="selectCandidate(${i})">
+      <div class="cc-header">
+        <div class="cc-av" style="background:${c.color}">${c.initials}</div>
+        <div>
+          <div class="cc-name">${c.name}</div>
+          <div class="cc-title">${c.title} · ${c.exp}</div>
+        </div>
+        <div class="cc-score-badge" style="background:${c.scoreColor}22;color:${c.scoreColor}">${c.score}</div>
+      </div>
+      <div class="cc-tags">${c.tags.slice(0,3).map(t=>`<span class="cc-tag">${t}</span>`).join('')}</div>
+      <div class="cc-meta"><span>📍 ${c.loc}</span><span class="badge badge-${c.status>=3?'green':c.status>=2?'teal':'amber'}" style="font-size:10px">${stages[c.status]}</span></div>
+    </div>
+  `).join('');
+}
+
+function selectCandidate(i) {
+  selected = i;
+  renderList();
+  const c = candidates[i];
+  document.getElementById('dh-av').textContent = c.initials;
+  document.getElementById('dh-av').style.background = c.color;
+  document.getElementById('dh-name').textContent = c.name;
+  document.getElementById('dh-title').textContent = c.title + ' · ' + c.loc;
+  document.getElementById('dh-tags').innerHTML = c.tags.map(t=>`<span class="badge badge-purple">${t}</span>`).join('');
+  document.getElementById('ai-score').textContent = c.score;
+  document.getElementById('ai-score').style.color = c.scoreColor;
+  document.getElementById('ai-breakdown').innerHTML = c.ai.map(a=>`
+    <div class="ab-row">
+      <span class="ab-label">${a.label}</span>
+      <div class="ab-bar"><div class="ab-fill" style="width:${a.val}%;background:${c.scoreColor}"></div></div>
+      <span class="ab-val">${a.val}%</span>
+    </div>
+  `).join('');
+  document.getElementById('status-flow').innerHTML = stages.map((s,si)=>`
+    <div class="sf-step ${si<c.status?'done':si===c.status?'current':''}">
+      <div class="sf-circle">${si<c.status?'✓':si===c.status?'◉':''}</div>
+      <div class="sf-name">${s}</div>
+    </div>
+  `).join('');
+  const expItems = [
+    {co:'Previous Corp', role:c.title, dur:'2021–present'},
+    {co:'Design Studio', role:'UX Designer', dur:'2019–2021'},
+    {co:'Freelance', role:'UI/UX Consultant', dur:'2017–2019'},
+  ];
+  document.getElementById('exp-list').innerHTML = expItems.map(e=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:14px;">💼</div>
+      <div><div style="font-size:13px;font-weight:600">${e.role}</div><div style="font-size:11px;color:var(--muted)">${e.co} · ${e.dur}</div></div>
+    </div>
+  `).join('');
+}
+
+function switchView(name, el) {
+  document.querySelectorAll('.view').forEach(v => { v.classList.remove('active'); v.style.display='none'; });
+  const view = document.getElementById('view-'+name);
+  view.style.display = 'flex';
+  view.classList.add('active');
+  document.querySelectorAll('.tb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+function switchTabDirect(name) {
+  const el = document.querySelectorAll('.tb-item')[1];
+  switchView(name, el);
+}
+
+renderList();
+selectCandidate(0);
+</script>
+</body>
+</html>
