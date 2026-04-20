@@ -1,3 +1,4 @@
+<img width="1510" height="773" alt="Screenshot 2026-04-19 at 11 58 26 pm" src="https://github.com/user-attachments/assets/9253e135-19be-4964-abfa-f8745ff6483c" />
 # TalentAI — AI Resume Screening Platform
 
 TalentAI is a modern AI-powered recruitment dashboard designed to help companies screen resumes faster, rank candidates intelligently, and streamline the hiring pipeline.
